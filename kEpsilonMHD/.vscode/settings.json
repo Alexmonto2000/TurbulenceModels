@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "kEpsilon.C": "cpp",
+        "kEpsilonMHD.C": "cpp"
+    }
+}

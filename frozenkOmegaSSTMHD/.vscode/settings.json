@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "kOmegaSSTML.C": "cpp",
+        "kOmegaSSTFrozen.C": "cpp",
+        "kOmegaSSTBase.C": "cpp",
+        "frozenkOmegaSST.C": "cpp",
+        "frozenkOmegaSSTMHD.C": "cpp"
+    }
+}
