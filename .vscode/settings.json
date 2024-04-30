@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "kEpsilonMHDFull.C": "cpp",
-        "kEpsilonMHD.C": "cpp"
+        "kEpsilonMHD.C": "cpp",
+        "kOmegaSSTMLDelta.C": "cpp",
+        "frozenkOmegaSST.C": "cpp"
     }
 }

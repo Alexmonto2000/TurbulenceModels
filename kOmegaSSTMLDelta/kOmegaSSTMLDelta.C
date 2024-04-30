@@ -436,7 +436,7 @@ void kOmegaSSTMLDelta<BasicTurbulenceModel>::correct()
                *max(this->a1_*omega_(), this->b1_*F23()*sqrt(S2()))
             )
         // Production modified due to k-equation correction
-        //+ alpha()*rho()*gamma*kDeficit_/nut()*(xi_ * usekDeficit_) 
+          + alpha()*rho()*gamma*kDeficit_/nut()*(xi_ * usekDeficit_) 
           - fvm::SuSp((2.0/3.0)*alpha()*rho()*gamma*divU, omega_)
           - fvm::Sp(alpha()*rho()*beta*omega_(), omega_)
           - fvm::SuSp
