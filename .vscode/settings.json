@@ -3,6 +3,9 @@
         "kEpsilonMHDFull.C": "cpp",
         "kEpsilonMHD.C": "cpp",
         "kOmegaSSTMLDelta.C": "cpp",
-        "frozenkOmegaSST.C": "cpp"
+        "frozenkOmegaSST.C": "cpp",
+        "kOmegaSSTMLDelta_HPC.C": "cpp",
+        "kOmegaSSTML_SpaRTA.C": "cpp",
+        "kOmegaSSTML.C": "cpp"
     }
 }

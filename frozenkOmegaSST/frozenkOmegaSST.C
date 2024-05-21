@@ -830,7 +830,7 @@ void frozenkOmegaSST<BasicTurbulenceModel>::correct()
                *max(this->a1_*omega_(), this->b1_*F23()*sqrt(S2()))
             )
 	 // 4b. kDeficit term (error in k eqn transferred to omega)
-	 + alpha()*rho()*gamma * kDeficit_/nut()*(usekDeficit_*xi_) 
+	 //+ alpha()*rho()*gamma * kDeficit_/nut()*(usekDeficit_*xi_) //Removed due to instability
 	 // 5. Compressible part of production (for divU != 0)
 	 - fvm::SuSp((2.0/3.0)*alpha()*rho()*gamma*divU, omega_)
 	 // 6. Dissipation of omega = -beta rho omega^2
