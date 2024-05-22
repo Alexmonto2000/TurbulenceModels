@@ -397,6 +397,13 @@ void kOmegaSSTML_SpaRTA<BasicTurbulenceModel>::correct()
         dimensionSet(0, 2,-1, 0, 0,0,0),
         transportProperties
     );
+    //Density
+    dimensionedScalar rhol
+    (
+        "rhol",
+        dimensionSet(1, -3, 0, 0, 0,0,0),
+        transportProperties
+    );
 
     // Update omega and G at the wall
     volScalarField& omega_ = this->omega_;
@@ -443,9 +450,9 @@ void kOmegaSSTML_SpaRTA<BasicTurbulenceModel>::correct()
     
     epsilon_ = (omega_*k_);
     volScalarField q_gamma((mag(tgradU())*k_) / max(epsilon_, dimensionedScalar("small", dimensionSet(0,2,-3,0,0,0,0), 1.0e-10)  )); //ask about this this->k_
-    volScalarField q_Re( 2 - min(sqrt(k_)*y_ / (50 * nu_),dimensionedScalar("small", dimensionSet(0,0,0,0,0,0,0), 2)));
-    volScalarField q_T(k_* mag(S) / max(epsilon_, dimensionedScalar("small", dimensionSet(0,2,-3,0,0,0,0), 1.0e-10)  ));
-    volScalarField q_AlfS( (pow(k_ / epsilon_ , 1.5) / (rho* sqrt(nu)))* 1.41421356 * mag(lorentz())/max(k_* mag(S) / epsilon_, dimensionedScalar("small", dimensionSet(0,0,0,0,0,0,0), 1.0e-10)  ));
+    volScalarField q_Re( 2 - min(sqrt(k_)*y_ / (50 * nu),dimensionedScalar("small", dimensionSet(0,0,0,0,0,0,0), 2)));
+    volScalarField q_T(mag(S));
+    volScalarField q_AlfS( (pow(k_ / epsilon_ , 1.5) / (rhol* sqrt(nu)))* 1.41421356 * mag(lorentz())/max(mag(S), dimensionedScalar("small", dimensionSet(0,0,0,0,0,0,0), 1.0e-10)  ));
 /************************************************************************/
 
 
