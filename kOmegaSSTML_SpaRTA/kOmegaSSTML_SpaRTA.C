@@ -439,29 +439,98 @@ void kOmegaSSTML_SpaRTA<BasicTurbulenceModel>::correct()
     volSymmTensorField S(symm(tgradU()) / omega_);
     volTensorField W(skew(tgradU()) / omega_);
     volScalarField S2(2*magSqr(symm(tgradU()))); 
+    volScalarField tau_s( 1 / sqrt(magSqr(tgradU())));
+    volSymmTensorField S_s(symm(tgradU()) * tau_s);
+    volTensorField W_s(skew(tgradU()) * tau_s);
     /*******************************Feature Addition**************************/
     //add features for models
     // volSymmTensorField T1(S);
     // volSymmTensorField T2((symm((S & W) - (W & S))));
     // volSymmTensorField T3((symm((S & S) - 0.3333*tr(S & S)*I)));
     // volSymmTensorField T4((symm((W & W) - 0.3333*tr(W & W)*I)));
+    gradk_ = fvc::grad(k_);
+
+    // Basis vectors
+    vector ex(1, 0, 0);
+    vector ey(0, 1, 0);
+    vector ez(0, 0, 1);
+
+    // Compute the cross products with each basis vector using OpenFOAM's built-in functions
+    tmp<volVectorField> crossEx = gradk_ ^ ex;
+    tmp<volVectorField> crossEy = gradk_ ^ ey;
+    tmp<volVectorField> crossEz = gradk_ ^ ez;
+
+    // Initialize the result tensor field with an IOobject
+    tmp<volTensorField> I_cross_gradk = W_s * dimensionedScalar("small", dimensionSet(0,1,-2,0,0,0,0), 1) ;
+    // Stack the cross product vector fields into the tensor field
+    // I_cross_gradk().component(0) = crossEx().component(0);
+    // I_cross_gradk().component(1) = crossEy().component(0);
+    // I_cross_gradk().component(2) = crossEz().component(0);
+    for (int i = 0; i < 3; ++i) {
+        I_cross_gradk().component(0+i*3) = crossEx().component(i);
+        I_cross_gradk().component(1+i*3) = crossEy().component(i);
+        I_cross_gradk().component(2+i*3) = crossEz().component(i);
+    }
+    crossEx.clear();
+    crossEy.clear();
+    crossEz.clear();
+
+    tmp<volVectorField> crossExg = lorentz() ^ ex;
+    tmp<volVectorField> crossEyg = lorentz() ^ ey;
+    tmp<volVectorField> crossEzg = lorentz() ^ ez;
+
+    // Initialize the result tensor field
+    tmp<volTensorField> I_cross_lorentz = W_s * dimensionedScalar("small", dimensionSet(1,-2,-2,0,0,0,0), 1)  ;
+
+    // Stack the cross product vector fields into the tensor field
+    // I_cross_lorentz().component(0) = crossExg().component(0);
+    // I_cross_lorentz().component(1) = crossEyg().component(0);
+    // I_cross_lorentz().component(2) = crossEzg().component(0);
+    for (int i = 0; i < 3; ++i) {
+        I_cross_lorentz().component(0+i*3) = crossExg().component(i);
+        I_cross_lorentz().component(1+i*3) = crossEyg().component(i);
+        I_cross_lorentz().component(2+i*3) = crossEzg().component(i);
+    }
+
+    crossExg.clear();
+    crossEyg.clear();
+    crossEzg.clear();
+
+    volTensorField Ak(-(tau_s /sqrt(k_)) * I_cross_gradk());
+    volTensorField Alf(-(tau_s /(rhol * sqrt(k_))) * I_cross_lorentz());
     
-    
-    
+    I_cross_gradk.clear();
+    I_cross_lorentz.clear();
+    // I_cross_gradk.clear();
+    // I_cross_lorentz.clear();
+
     epsilon_ = (omega_*k_);
-    volScalarField q_gamma((mag(tgradU())*k_) / max(epsilon_, dimensionedScalar("small", dimensionSet(0,2,-3,0,0,0,0), 1.0e-10)  )); //ask about this this->k_
+    volScalarField G1_s(2 * k_ * S_s && tgradU());
+    // volScalarField q_gamma((mag(tgradU())*k_) / max(epsilon_, dimensionedScalar("small", dimensionSet(0,2,-3,0,0,0,0), 1.0e-10)  )); //ask about this this->k_
     volScalarField q_Re( 2 - min(sqrt(k_)*y_ / (50 * nu),dimensionedScalar("small", dimensionSet(0,0,0,0,0,0,0), 2)));
-    volScalarField q_T(mag(S));
-    volScalarField q_AlfS( (pow(k_ / epsilon_ , 1.5) / (rhol* sqrt(nu)))* 1.41421356 * mag(lorentz())/max(mag(S), dimensionedScalar("small", dimensionSet(0,0,0,0,0,0,0), 1.0e-10)  ));
+    volScalarField Alf2(tr(Alf & Alf));
+    volScalarField AlfAkS_s(tr(Alf & Ak & S_s));
+    volScalarField Ak2WS_s(tr(Ak & Ak & W_s & S_s));
+    // volScalarField Ak2( -2 * (k_ / pow(max(epsilon_, dimensionedScalar("small", dimensionSet(0,2,-3,0,0,0,0), 1.0e-5)) ,2)) * magSqr(gradk_));
+    // volScalarField W2_omega( tr(W & W));
+    // volScalarField q_T(mag(S));
+    // volScalarField q_AlfS( (pow(k_ / epsilon_ , 1.5) / (rhol* sqrt(nu)))* 1.41421356 * mag(lorentz())/max(mag(S), dimensionedScalar("small", dimensionSet(0,0,0,0,0,0,0), 1.0e-10)  ));
 /************************************************************************/
 
 
 /*******************************Model Addition**************************/
     //Model kDeficit_
-    kDeficit_ = ((0.33667425 * (q_Re/0.76262944)*(epsilon_/0.072954023) +
-     0.15326155 * sqrt(q_T/0.26157319)*(epsilon_/0.072954023) +
-     0.84000332 * sqrt(q_AlfS/7.6895703)*(epsilon_/0.072954023)) * 0.0048252824); //ask about constant = 1
-
+    // kDeficit_ = ((0.33667425 * (q_Re/0.76262944)*(epsilon_/0.072954023) +
+    //  0.15326155 * sqrt(q_T/0.26157319)*(epsilon_/0.072954023) +
+    //  0.84000332 * sqrt(q_AlfS/7.6895703)*(epsilon_/0.072954023)) * 0.0048252824); //ask about constant = 1
+    // kDeficit_ = classifier * ((0.1490922 * exp((Ak2/0.027381251))*(G1_s/0.030737712) + 
+    // 0.0052832763 * exp((q_Re/0.41329415))*(G1_s/0.030737712) + 
+    // 1.0324156 * exp((W2_omega/0.1472586))*(G1_s/0.030737712)) * 0.0058549696);
+    volScalarField classifier(0.5 + 0.5*tanh(10000*(q_Re - 0.75)));
+    kDeficit_ = classifier * ((9.0522818 * (AlfAkS_s/0.40531256)*(G1_s/0.030922807) + 
+    0.0071495883 * exp((q_Re/0.41443723))*(G1_s/0.030922807) + 0.65933346 * (pow(Ak2WS_s/0.047350833,2))*(G1_s/0.030922807) +
+     -114.47952 * ((Alf2/31.649646)/ (1 + pow(Alf2/31.649646 , 2)))*(G1_s/0.030922807) + 0.82124913 * ((q_Re/0.41443723)/ (1 + pow(q_Re/0.41443723 , 2)))*(G1_s/0.030922807) + 
+     -1.374269 * sqrt(pow(AlfAkS_s/0.40531256 , 2))*(G1_s/0.030922807)) * 0.0058229656);
 /************************************************************************/
 
     lorentz.clear();

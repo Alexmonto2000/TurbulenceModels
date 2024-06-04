@@ -181,6 +181,23 @@ kOmegaSSTML_Python<BasicTurbulenceModel>::kOmegaSSTML_Python
         ),
         this->mesh_
     ),
+    sigma_
+    (
+        IOobject(
+	    "sigma",
+            this->runTime_.timeName(),
+            this->mesh_,
+            IOobject::READ_IF_PRESENT,
+            IOobject::AUTO_WRITE
+        ),
+        this->mesh_,
+        dimensionedScalar
+        (
+            "sigma", 
+            dimensionSet(0,0,0,0,0,0,0), 
+            1.20813608515e-37
+        ) 
+    ),
     y_(
        IOobject
        (
@@ -454,9 +471,18 @@ void kOmegaSSTML_Python<BasicTurbulenceModel>::correct()
     word pName_ = ("p");
     tmp<volScalarField> p_ = U.db().lookupObject<volScalarField>(pName_);     
 
+    word lName_ = ("lorentz");
+    tmp<volVectorField> lorentzforce = U.db().lookupObject<volVectorField>(lName_);     
+   
+    tmp<volTensorField> tgradU = fvc::grad(U);
+    volSymmTensorField S(symm(tgradU()) / omega_);
+    volTensorField W(skew(tgradU()) / omega_);
+    volScalarField S2(2*magSqr(symm(tgradU()))); 
+
     //Get the gradient fields of p and k
     tmp<volVectorField> tgradp = fvc::grad(p_);
     tmp<volVectorField> tgradk = fvc::grad(k_);
+    tmp<volVectorField> tcurlU = fvc::curl(U); 
     
     // Loop over each mesh cell and store relevant variables in the array which
     // is passed to Python.
@@ -512,6 +538,11 @@ void kOmegaSSTML_Python<BasicTurbulenceModel>::correct()
         input_vals[id*num_scalars + 23] = tcurlU()[id][0];
         input_vals[id*num_scalars + 24] = tcurlU()[id][1];
         input_vals[id*num_scalars + 25] = tcurlU()[id][2];
+
+        //Lorentz force vector
+        input_vals[id*num_scalars + 26] = lorentzforce()[id][0];
+        input_vals[id*num_scalars + 27] = lorentzforce()[id][1];
+        input_vals[id*num_scalars + 28] = lorentzforce()[id][2];
                     
     }
 
@@ -640,47 +671,9 @@ void kOmegaSSTML_Python<BasicTurbulenceModel>::correct()
         fvc::div(fvc::absolute(this->phi(), U))()()
     );
 
-    //Custom code to ensure the most updated gradient of p is outputted
-    //TODO: Now calculates gradp each iteration; can be optimized to only
-    //calculate it each write time.
-    word pName_ = ("p");
-    tmp<volScalarField> p_ = U.db().lookupObject<volScalarField>(pName_);    
-    gradp_ = fvc::grad(p_);  
-
-    // Same but for Lorentz force
-    word lName_ = ("lorentz");
-    tmp<volVectorField> lorentz = U.db().lookupObject<volVectorField>(lName_);    
-        
-    tmp<volTensorField> tgradU = fvc::grad(U);
-    volSymmTensorField S(symm(tgradU()) / omega_);
-    volTensorField W(skew(tgradU()) / omega_);
-    volScalarField S2(2*magSqr(symm(tgradU()))); 
-    /*******************************Feature Addition**************************/
-    //add features for models
-    // volSymmTensorField T1(S);
-    // volSymmTensorField T2((symm((S & W) - (W & S))));
-    // volSymmTensorField T3((symm((S & S) - 0.3333*tr(S & S)*I)));
-    // volSymmTensorField T4((symm((W & W) - 0.3333*tr(W & W)*I)));
-    
-    
-    
-    epsilon_ = (omega_*k_);
-    volScalarField q_gamma((mag(tgradU())*k_) / max(epsilon_, dimensionedScalar("small", dimensionSet(0,2,-3,0,0,0,0), 1.0e-10)  )); //ask about this this->k_
-    volScalarField q_Re( 2 - min(sqrt(k_)*y_ / (50 * nu),dimensionedScalar("small", dimensionSet(0,0,0,0,0,0,0), 2)));
-    volScalarField q_T(mag(S));
-    volScalarField q_AlfS( (pow(k_ / epsilon_ , 1.5) / (rhol* sqrt(nu)))* 1.41421356 * mag(lorentz())/max(mag(S), dimensionedScalar("small", dimensionSet(0,0,0,0,0,0,0), 1.0e-10)  ));
 /************************************************************************/
 
-
-/*******************************Model Addition**************************/
-    //Model kDeficit_
-    kDeficit_ = ((0.33667425 * (q_Re/0.76262944)*(epsilon_/0.072954023) +
-     0.15326155 * sqrt(q_T/0.26157319)*(epsilon_/0.072954023) +
-     0.84000332 * sqrt(q_AlfS/7.6895703)*(epsilon_/0.072954023)) * 0.0048252824); //ask about constant = 1
-
-/************************************************************************/
-
-    lorentz.clear();
+    lorentzforce.clear();
 
     volScalarField GbyNu(dev(twoSymm(tgradU())) && tgradU());
     volScalarField::Internal G(this->GName(), nut()*GbyNu);

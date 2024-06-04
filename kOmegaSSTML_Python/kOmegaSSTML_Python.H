@@ -162,6 +162,7 @@ protected:
             volScalarField epsilon_;
             volScalarField kDeficit_;
             volSymmTensorField bijDelta_;
+            volScalarField      sigma_;
 
         //- Wall distance
         //  Note: different to wall distance in parent RASModel
