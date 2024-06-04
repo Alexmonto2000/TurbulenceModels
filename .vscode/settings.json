@@ -6,6 +6,11 @@
         "frozenkOmegaSST.C": "cpp",
         "kOmegaSSTMLDelta_HPC.C": "cpp",
         "kOmegaSSTML_SpaRTA.C": "cpp",
-        "kOmegaSSTML.C": "cpp"
+        "kOmegaSSTML.C": "cpp",
+        "propagationkOmegaSST.C": "cpp",
+        "propagationkOmega.C": "cpp",
+        "kOmegaSSTML_Python.C": "cpp",
+        "modelPropagationkOmegaSST.C": "cpp",
+        "kOmegaSSTML_SpaRTA_V2.C": "cpp"
     }
 }
