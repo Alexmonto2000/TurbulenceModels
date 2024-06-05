@@ -11,6 +11,9 @@
         "propagationkOmega.C": "cpp",
         "kOmegaSSTML_Python.C": "cpp",
         "modelPropagationkOmegaSST.C": "cpp",
-        "kOmegaSSTML_SpaRTA_V2.C": "cpp"
+        "kOmegaSSTML_SpaRTA_V2.C": "cpp",
+        "kOmegaSSTML_SpaRTA4060.C": "cpp",
+        "kOmegaSSTML_SpaRTA40120.C": "cpp",
+        "kOmegaSSTML_SpaRTA60120.C": "cpp"
     }
 }
